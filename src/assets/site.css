@@ -22,7 +22,7 @@
   --grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .9 0 0 0 0 .86 0 0 0 0 .78 0 0 0 .5 -.25'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --display: "Bodoni Moda", "Noto Serif TC", "Songti TC", serif;
   --serif-tc: "Noto Serif TC", "Songti TC", serif;
-  --text: "Jost", "Noto Sans TC", "PingFang TC", sans-serif;
+  --text: "Jost", "PingFang TC", "Noto Sans CJK TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
   --step-small: 1rem;
   --step-body: 1.125rem;
   --step-lead: clamp(1.25rem, 1.05rem + 0.6vw, 1.5rem);
@@ -344,4 +344,4 @@ th { font-weight: 500; background: var(--surface); }
 .pad-leaf, .pad-tab, .today-leaf, .daily, .all, .domains, .card, .lesson, .index, .slip, .deck-card, .pager a, .step, .domains-photo figcaption { background-image: var(--grain), var(--laid); }
 body, .today, .back, .deck-next, .domains-tile, .pager .pager-soon { background-image: var(--grain-dark); }
 .hero { position: relative; isolation: isolate; }
-.hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("img/montaigne.jpg") 50% 22% / cover no-repeat; filter: grayscale(1) contrast(1.1); opacity: 0.06; mix-blend-mode: screen; }
+.hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("img/montaigne-faint.jpg") 50% 22% / cover no-repeat; filter: grayscale(1) contrast(1.1); opacity: 0.06; mix-blend-mode: screen; }

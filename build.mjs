@@ -34,6 +34,32 @@ const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const longDate = (d) => { const [y, m, day] = d.split('-').map(Number); const w = new Date(Date.UTC(y, m - 1, day)).getUTCDay(); return `${y} 年 ${m} 月 ${day} 日 · 星期${WEEK[w]}`; };
 const dotDate = (d) => d.replace(/-/g, '.');
 
+// ---------- image sizes ----------
+// Width and height from a local PNG, JPEG, GIF or WebP file's header, so every <img> can carry them.
+function imageSize(src) {
+  if (!src || /^https?:|^data:/.test(src)) return null;
+  const file = join(ROOT, 'lessons', src.replace(/^\.?\//, ''));
+  let b; try { b = readFileSync(file); } catch { return null; }
+  if (b[0] === 0x89 && b.toString('ascii', 1, 4) === 'PNG') return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+  if (b.toString('ascii', 0, 3) === 'GIF') return { w: b.readUInt16LE(6), h: b.readUInt16LE(8) };
+  if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') {
+    const k = b.toString('ascii', 12, 16);
+    if (k === 'VP8X') return { w: 1 + b.readUIntLE(24, 3), h: 1 + b.readUIntLE(27, 3) };
+    if (k === 'VP8 ') return { w: b.readUInt16LE(26) & 0x3fff, h: b.readUInt16LE(28) & 0x3fff };
+    if (k === 'VP8L') { const n = b.readUInt32LE(21); return { w: 1 + (n & 0x3fff), h: 1 + ((n >> 14) & 0x3fff) }; }
+  }
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    for (let i = 2; i < b.length - 9;) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const m = b[i + 1], len = b.readUInt16BE(i + 2);
+      if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) return { w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5) };
+      i += 2 + len;
+    }
+  }
+  return null;
+}
+const sizeAttrs = (src) => { const d = imageSize(src); return d ? ` width="${d.w}" height="${d.h}"` : ''; };
+
 // ---------- sanitize ----------
 // The site is public, so a lesson file may only carry text markup: an allowlist of tags, of attributes
 // (href and src, plus an image's size), and of link and picture schemes. Everything else is dropped, and
@@ -106,7 +132,7 @@ function figures(html, depth) {
     const w = Number(attrs.match(/width="(\d+)"/)?.[1]) || 0;
     const alt = cap ? strip(cap).replace(/^圖\s*\d+[｜|]/, '').split(/來源：/)[0].trim() : '';
     const shape = w && w < 440 ? ' fig-tall' : '';
-    return `<figure class="fig${shape}" data-reveal><img src="${esc(imgSrc(src, depth))}" alt="${esc(alt)}" loading="lazy" decoding="async">${cap ? `<figcaption>${cap.replace(/<\/?em>/g, '')}</figcaption>` : ''}</figure>`;
+    return `<figure class="fig${shape}" data-reveal><img src="${esc(imgSrc(src, depth))}"${sizeAttrs(src)} alt="${esc(alt)}" loading="lazy" decoding="async">${cap ? `<figcaption>${cap.replace(/<\/?em>/g, '')}</figcaption>` : ''}</figure>`;
   });
 }
 
@@ -163,8 +189,13 @@ function lessonBody(l, depth) {
 }
 
 // ---------- page chrome ----------
+// The web fonts never hold up the first paint: their stylesheet (about 500 KB for the Chinese serif) loads
+// as a print sheet and site.js switches it on, so text shows at once in the system face and the fonts
+// swap in when they arrive. Body Chinese uses the system's own face (PingFang, Noto Sans CJK, JhengHei).
+const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Jost:wght@400;500&family=Noto+Serif+TC:wght@500;600&display=swap';
 const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Jost:wght@400;500&family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@500;600&display=swap" rel="stylesheet">`;
+<link rel="stylesheet" href="${FONT_CSS}" media="print" data-webfonts>
+<noscript><link rel="stylesheet" href="${FONT_CSS}"></noscript>`;
 
 // structured data for search engines; "<" is escaped so the JSON can never close its script element
 const jsonLd = (o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`;
@@ -304,10 +335,10 @@ ${bar(depth, 'archive')}
 <ol class="index-rows">
 ${lessons.map((l) => `<li class="index-row" data-reveal${lessonImageFor(l) ? ` data-preview="${esc(imgSrc(lessonImageFor(l), depth))}"` : ''}>
 <a href="${l.id}/"><span class="index-num">${l.id}</span><span class="index-title">${esc(l.title)}</span><span class="index-meta">${dotDate(l.date)}${l.domain ? ` · ${esc(l.domain)}` : ''}</span></a>
-${lessonImageFor(l) ? `<img class="index-inline" src="${esc(imgSrc(lessonImageFor(l), depth))}" alt="" loading="lazy">` : ''}
+${lessonImageFor(l) ? `<img class="index-inline" src="${esc(imgSrc(lessonImageFor(l), depth))}"${sizeAttrs(lessonImageFor(l))} alt="" loading="lazy" decoding="async">` : ''}
 </li>`).join('\n')}
 </ol>
-<div class="index-frame" aria-hidden="true"><img alt=""></div>
+<div class="index-frame" aria-hidden="true"><img alt="" width="800" height="1000"></div>
 </div>
 </main>
 ${footer(depth)}`;
@@ -355,7 +386,7 @@ ${tabs.slice(1).reverse().map(([id, label], i, arr) => `<a class="pad-leaf pad-l
 <p class="today-lead" data-reveal>${esc(t.lead)}</p>
 <p data-reveal><a href="lessons/${t.id}/">讀完整一堂，約 15 分鐘</a></p>
 </div>
-${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img src="${esc(imgSrc(lessonImageFor(t), depth))}" alt="${esc(firstCaption(t))}"><figcaption>${esc(firstCaption(t))}</figcaption></figure>` : ''}
+${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img src="${esc(imgSrc(lessonImageFor(t), depth))}"${sizeAttrs(lessonImageFor(t))} alt="${esc(firstCaption(t))}" loading="lazy" decoding="async"><figcaption>${esc(firstCaption(t))}</figcaption></figure>` : ''}
 </div>
 </div>
 </section>
@@ -382,7 +413,7 @@ ${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img src="${esc(img
 <li><strong>來源與延伸閱讀</strong>每個連結都寫查核日期</li>
 </ol>
 <figure class="daily-photo" data-reveal>
-<img src="assets/img/montaigne-binding.jpg" width="986" height="1400" alt="一本封皮磨破、書頁捲曲的十六世紀曆書" loading="lazy">
+<img src="assets/img/montaigne-binding.jpg" width="774" height="1100" alt="一本封皮磨破、書頁捲曲的十六世紀曆書" loading="lazy">
 <figcaption>一天一頁的書被翻成這樣：Montaigne 家用了幾十年的《Ephemeris historica》。</figcaption>
 </figure>
 </section>
@@ -411,7 +442,7 @@ ${lessons.slice(0, 8).reverse().map((l, i, arr) => `<article class="deck-card to
 <p>${esc(l.lead.slice(0, 64))}…</p>
 <p class="deck-foot"><time datetime="${l.date}">${dotDate(l.date)}</time><a href="lessons/${l.id}/">讀這一堂</a></p>
 </div>
-${l.firstImg ? `<img class="deck-img" src="${esc(imgSrc(l.firstImg, depth))}" alt="" loading="lazy">` : ''}
+${l.firstImg ? `<img class="deck-img" src="${esc(imgSrc(l.firstImg, depth))}"${sizeAttrs(l.firstImg)} alt="" loading="lazy" decoding="async">` : ''}
 </div>
 </article>`).join('\n')}
 <article class="deck-card deck-next" aria-label="下一堂">
@@ -426,7 +457,7 @@ ${l.firstImg ? `<img class="deck-img" src="${esc(imgSrc(l.firstImg, depth))}" al
 <p class="domains-lead" data-reveal>每堂課只挑一個領域深入，再拿另一個領域對照：${DOMAINS.join('、')}。</p>
 <div class="domains-tiles">
 <figure class="domains-photo" data-reveal>
-<video autoplay muted loop playsinline preload="metadata" poster="assets/video/danse-serpentine-poster.jpg" width="640" height="480" aria-hidden="true" data-film><source src="assets/video/danse-serpentine.webm" type="video/webm"></video>
+<video muted loop playsinline preload="none" poster="assets/video/danse-serpentine-poster.jpg" width="640" height="480" aria-hidden="true" data-film data-src="assets/video/danse-serpentine.webm"></video>
 <figcaption>舞蹈與電影：Lumière 兄弟 1897 年拍下的〈Danse serpentine〉，一位舞者用長棒撐開綢布，讓布料本身成為動作。</figcaption>
 </figure>
 <div class="domains-tile" data-reveal>

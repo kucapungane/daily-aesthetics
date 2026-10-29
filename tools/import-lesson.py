@@ -89,8 +89,30 @@ def clean(src, number, img_dir):
     s = re.sub(r'(</(p|h2|li|tr|table|ol|ul)>)', r'\1\n', s)
     os.makedirs(img_dir, exist_ok=True)
     for name, data in saved:
-        open(os.path.join(img_dir, name), 'wb').write(data)
+        path = os.path.join(img_dir, name)
+        open(path, 'wb').write(data)
+        shrink(path)
     return s, len(saved)
+
+
+def shrink(path, longest=1400):
+    """Make a picture no larger than a lesson page shows it: at most 1400 px on its longer side, JPEGs at
+    quality 75. Needs Pillow; without it the picture is kept as exported."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    with Image.open(path) as im:
+        big = max(im.size) > longest
+        if not big and not path.lower().endswith(('.jpg', '.jpeg')):
+            return
+        im = im.copy()
+    if big:
+        im.thumbnail((longest, longest))
+    if path.lower().endswith(('.jpg', '.jpeg')):
+        im.convert('RGB').save(path, 'JPEG', quality=75, optimize=True, progressive=True)
+    else:
+        im.save(path, optimize=True)
 
 
 def main():

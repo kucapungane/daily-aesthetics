@@ -2,6 +2,9 @@
 (() => {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // the web fonts load as a print sheet so they never hold up the first paint; switch them on now
+  for (const l of document.querySelectorAll('link[data-webfonts]')) l.media = 'all';
+
   // entrances: the parts of each section arrive in turn, once, as it enters
   const reveal = [...document.querySelectorAll('[data-reveal]')];
   const show = (el) => el.classList.add('is-in');
@@ -71,8 +74,16 @@
     point(index.querySelector('.index-row'));
   }
 
-  // the film loops silently; under reduced motion it stays on its poster frame
-  for (const v of document.querySelectorAll('[data-film]')) { if (still) { v.removeAttribute('autoplay'); v.pause(); } }
+  // the film loops silently, and downloads only when it comes near the screen; under reduced motion it
+  // stays on its poster frame and never downloads
+  for (const v of document.querySelectorAll('video[data-film][data-src]')) {
+    if (still) continue;
+    const start = () => { if (!v.src) { v.src = v.dataset.src; v.load(); } v.play().catch(() => {}); };
+    if (!('IntersectionObserver' in window)) { start(); continue; }
+    new IntersectionObserver((entries) => {
+      for (const e of entries) { if (e.isIntersecting) start(); else if (v.src) v.pause(); }
+    }, { rootMargin: '300px 0px' }).observe(v);
+  }
 
   // the photograph behind the slips drifts with the scroll
   const photo = document.querySelector('.sources-photo');
