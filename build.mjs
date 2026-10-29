@@ -59,6 +59,19 @@ function imageSize(src) {
   return null;
 }
 const sizeAttrs = (src) => { const d = imageSize(src); return d ? ` width="${d.w}" height="${d.h}"` : ''; };
+// A lesson picture as the browser should fetch it: the WebP beside it when there is one (NAME.webp), with
+// the 480 px copy (NAME-480.webp) offered to phones, and the original's width and height either way.
+const lessonFile = (src) => join(ROOT, 'lessons', src.replace(/^\.?\//, ''));
+function picAttrs(src, depth, sizes) {
+  const size = sizeAttrs(src);
+  if (!src || /^https?:|^data:/.test(src)) return ` src="${esc(imgSrc(src, depth))}"${size}`;
+  const base = src.replace(/\.(jpe?g|png)$/i, '');
+  if (base === src || !existsSync(lessonFile(`${base}.webp`))) return ` src="${esc(imgSrc(src, depth))}"${size}`;
+  const full = imageSize(`${base}.webp`)?.w;
+  const small = existsSync(lessonFile(`${base}-480.webp`)) ? `${esc(imgSrc(`${base}-480.webp`, depth))} 480w, ` : '';
+  return ` src="${esc(imgSrc(`${base}.webp`, depth))}"${small && full ? ` srcset="${small}${esc(imgSrc(`${base}.webp`, depth))} ${full}w" sizes="${sizes}"` : ''}${size}`;
+}
+const webpOf = (src) => { const base = src && src.replace(/\.(jpe?g|png)$/i, ''); return base && base !== src && existsSync(lessonFile(`${base}.webp`)) ? `${base}.webp` : src; };
 
 // ---------- sanitize ----------
 // The site is public, so a lesson file may only carry text markup: an allowlist of tags, of attributes
@@ -132,7 +145,7 @@ function figures(html, depth) {
     const w = Number(attrs.match(/width="(\d+)"/)?.[1]) || 0;
     const alt = cap ? strip(cap).replace(/^圖\s*\d+[｜|]/, '').split(/來源：/)[0].trim() : '';
     const shape = w && w < 440 ? ' fig-tall' : '';
-    return `<figure class="fig${shape}" data-reveal><img src="${esc(imgSrc(src, depth))}"${sizeAttrs(src)} alt="${esc(alt)}" loading="lazy" decoding="async">${cap ? `<figcaption>${cap.replace(/<\/?em>/g, '')}</figcaption>` : ''}</figure>`;
+    return `<figure class="fig${shape}" data-reveal><img${picAttrs(src, depth, '(max-width: 760px) 100vw, 720px')} alt="${esc(alt)}" loading="lazy" decoding="async">${cap ? `<figcaption>${cap.replace(/<\/?em>/g, '')}</figcaption>` : ''}</figure>`;
   });
 }
 
@@ -259,7 +272,7 @@ function footer(depth, { withCredits = false } = {}) {
 <p>每堂課的圖片都是公有領域或開放授權，出處寫在圖說和文末的來源表。</p>
 </div>
 <div class="card-address">
-<img class="stamp" src="${up}assets/img/stamp.jpg" width="88" height="117" alt="Toulouse-Lautrec 畫的舞者 Loïe Fuller，1893 年">
+<img class="stamp" src="${up}assets/img/stamp.webp" loading="lazy" decoding="async" width="88" height="117" alt="Toulouse-Lautrec 畫的舞者 Loïe Fuller，1893 年">
 <ul>
 <li><a href="${up}feed.xml">RSS 訂閱</a></li>
 <li><a href="${up}lessons/">全部課程</a></li>
@@ -329,13 +342,13 @@ ${bar(depth, 'archive')}
 <p>${lessons.length} 堂，每天早上 ${PUBLISH_TIME} 多一堂。指向任何一堂，可以先看它的第一張圖。</p>
 <a class="button" href="${lessons[0].id}/">讀最新一堂：第${lessons[0].id}堂</a>
 </div>
-<figure class="archive-photo" data-reveal><img src="../assets/img/montaigne.jpg" width="1097" height="1600" alt="Montaigne 在印好日期的曆書頁上手寫的記事，1568 年 6 月 18 日"><figcaption>一天一頁：Montaigne 在曆書 6 月 18 日那頁寫下的記事，1568 年。</figcaption></figure>
+<figure class="archive-photo" data-reveal><img src="../assets/img/montaigne.webp" srcset="../assets/img/montaigne-480.webp 480w, ../assets/img/montaigne.webp 1097w" sizes="(max-width: 760px) 100vw, 40vw" width="1097" height="1600" decoding="async" alt="Montaigne 在印好日期的曆書頁上手寫的記事，1568 年 6 月 18 日"><figcaption>一天一頁：Montaigne 在曆書 6 月 18 日那頁寫下的記事，1568 年。</figcaption></figure>
 </header>
 <div class="index" data-index>
 <ol class="index-rows">
-${lessons.map((l) => `<li class="index-row" data-reveal${lessonImageFor(l) ? ` data-preview="${esc(imgSrc(lessonImageFor(l), depth))}"` : ''}>
+${lessons.map((l) => `<li class="index-row" data-reveal${lessonImageFor(l) ? ` data-preview="${esc(imgSrc(webpOf(lessonImageFor(l)), depth))}"` : ''}>
 <a href="${l.id}/"><span class="index-num">${l.id}</span><span class="index-title">${esc(l.title)}</span><span class="index-meta">${dotDate(l.date)}${l.domain ? ` · ${esc(l.domain)}` : ''}</span></a>
-${lessonImageFor(l) ? `<img class="index-inline" src="${esc(imgSrc(lessonImageFor(l), depth))}"${sizeAttrs(lessonImageFor(l))} alt="" loading="lazy" decoding="async">` : ''}
+${lessonImageFor(l) ? `<img class="index-inline"${picAttrs(lessonImageFor(l), depth, '100vw')} alt="" loading="lazy" decoding="async">` : ''}
 </li>`).join('\n')}
 </ol>
 <div class="index-frame" aria-hidden="true"><img alt="" width="800" height="1000"></div>
@@ -386,7 +399,7 @@ ${tabs.slice(1).reverse().map(([id, label], i, arr) => `<a class="pad-leaf pad-l
 <p class="today-lead" data-reveal>${esc(t.lead)}</p>
 <p data-reveal><a href="lessons/${t.id}/">讀完整一堂，約 15 分鐘</a></p>
 </div>
-${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img src="${esc(imgSrc(lessonImageFor(t), depth))}"${sizeAttrs(lessonImageFor(t))} alt="${esc(firstCaption(t))}" loading="lazy" decoding="async"><figcaption>${esc(firstCaption(t))}</figcaption></figure>` : ''}
+${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img${picAttrs(lessonImageFor(t), depth, '(max-width: 760px) 100vw, 34vw')} alt="${esc(firstCaption(t))}" loading="lazy" decoding="async"><figcaption>${esc(firstCaption(t))}</figcaption></figure>` : ''}
 </div>
 </div>
 </section>
@@ -413,13 +426,13 @@ ${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img src="${esc(img
 <li><strong>來源與延伸閱讀</strong>每個連結都寫查核日期</li>
 </ol>
 <figure class="daily-photo" data-reveal>
-<img src="assets/img/montaigne-binding.jpg" width="774" height="1100" alt="一本封皮磨破、書頁捲曲的十六世紀曆書" loading="lazy">
+<img src="assets/img/montaigne-binding.webp" srcset="assets/img/montaigne-binding-480.webp 480w, assets/img/montaigne-binding.webp 774w" sizes="(max-width: 760px) 100vw, 40vw" width="774" height="1100" decoding="async" alt="一本封皮磨破、書頁捲曲的十六世紀曆書" loading="lazy">
 <figcaption>一天一頁的書被翻成這樣：Montaigne 家用了幾十年的《Ephemeris historica》。</figcaption>
 </figure>
 </section>
 
 <section class="sources" id="sources" aria-labelledby="sources-title">
-<img class="sources-photo" src="assets/img/montaigne.jpg" width="1097" height="1600" alt="Montaigne 在印好日期的《Ephemeris historica》6 月 18 日頁上，手寫記下父親在 1568 年過世" loading="lazy">
+<img class="sources-photo" src="assets/img/montaigne.webp" srcset="assets/img/montaigne-480.webp 480w, assets/img/montaigne.webp 1097w" sizes="100vw" width="1097" height="1600" decoding="async" alt="Montaigne 在印好日期的《Ephemeris historica》6 月 18 日頁上，手寫記下父親在 1568 年過世" loading="lazy">
 <div class="sources-text">
 <h2 id="sources-title">每段都標出處</h2>
 <p>課程裡的每一段，都先說它是哪一種知識。理論是某人的主張，研究要有數據，史料要有文獻。</p>
@@ -442,7 +455,7 @@ ${lessons.slice(0, 8).reverse().map((l, i, arr) => `<article class="deck-card to
 <p>${esc(l.lead.slice(0, 64))}…</p>
 <p class="deck-foot"><time datetime="${l.date}">${dotDate(l.date)}</time><a href="lessons/${l.id}/">讀這一堂</a></p>
 </div>
-${l.firstImg ? `<img class="deck-img" src="${esc(imgSrc(l.firstImg, depth))}"${sizeAttrs(l.firstImg)} alt="" loading="lazy" decoding="async">` : ''}
+${l.firstImg ? `<img class="deck-img"${picAttrs(l.firstImg, depth, '360px')} alt="" loading="lazy" decoding="async">` : ''}
 </div>
 </article>`).join('\n')}
 <article class="deck-card deck-next" aria-label="下一堂">
@@ -457,7 +470,7 @@ ${l.firstImg ? `<img class="deck-img" src="${esc(imgSrc(l.firstImg, depth))}"${s
 <p class="domains-lead" data-reveal>每堂課只挑一個領域深入，再拿另一個領域對照：${DOMAINS.join('、')}。</p>
 <div class="domains-tiles">
 <figure class="domains-photo" data-reveal>
-<video muted loop playsinline preload="none" poster="assets/video/danse-serpentine-poster.jpg" width="640" height="480" aria-hidden="true" data-film data-src="assets/video/danse-serpentine.webm"></video>
+<video muted loop playsinline preload="none" poster="assets/video/danse-serpentine-poster.webp" width="640" height="480" aria-hidden="true" data-film data-src="assets/video/danse-serpentine.webm"></video>
 <figcaption>舞蹈與電影：Lumière 兄弟 1897 年拍下的〈Danse serpentine〉，一位舞者用長棒撐開綢布，讓布料本身成為動作。</figcaption>
 </figure>
 <div class="domains-tile" data-reveal>

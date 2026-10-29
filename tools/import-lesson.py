@@ -110,7 +110,16 @@ def shrink(path, longest=1400):
     if big:
         im.thumbnail((longest, longest))
     if path.lower().endswith(('.jpg', '.jpeg')):
-        im.convert('RGB').save(path, 'JPEG', quality=75, optimize=True, progressive=True)
+        im = im.convert('RGB')
+        im.save(path, 'JPEG', quality=75, optimize=True, progressive=True)
+        # the site serves photographs as WebP (NAME.webp), and phones the 480 px copy (NAME-480.webp)
+        base = path.rsplit('.', 1)[0]
+        try:
+            im.save(f'{base}.webp', 'WEBP', quality=70, method=6)
+            if im.width > 480:
+                im.resize((480, round(im.height * 480 / im.width))).save(f'{base}-480.webp', 'WEBP', quality=68, method=6)
+        except (OSError, KeyError):
+            pass  # this Pillow has no WebP encoder; the JPEG alone is served
     else:
         im.save(path, optimize=True)
 

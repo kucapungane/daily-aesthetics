@@ -2,8 +2,13 @@
 (() => {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // the web fonts load as a print sheet so they never hold up the first paint; switch them on now
-  for (const l of document.querySelectorAll('link[data-webfonts]')) l.media = 'all';
+  // The web fonts and the faint manuscript behind the title wait until the page has loaded, so nothing
+  // but the page's own HTML and CSS stands between the visitor and the first screen.
+  const later = () => {
+    for (const l of document.querySelectorAll('link[data-webfonts]')) l.media = 'all';
+    document.documentElement.classList.add('loaded');
+  };
+  if (document.readyState === 'complete') later(); else addEventListener('load', later, { once: true });
 
   // entrances: the parts of each section arrive in turn, once, as it enters
   const reveal = [...document.querySelectorAll('[data-reveal]')];
