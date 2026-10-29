@@ -4,8 +4,9 @@
 
 ## 運作方式
 
-1. 雲端排程「每日美學課程」每天撰寫一堂課，存進 Google 雲端硬碟，同時把同一份 HTML 寫成 `lessons/NNN.html`，推到 `claude/` 開頭的分支。
-2. GitHub Actions（`.github/workflows/pages.yml`）把該分支合併進 `main`，執行 `node build.mjs`，把 `dist/` 發布到 GitHub Pages。
+1. 雲端排程「每日美學課程」每天 06:53 撰寫一堂課，存進 Google 雲端硬碟資料夾「每日美學課程」。
+2. 雲端排程「每日美學課程：發布到網站」每天 07:30 檢查資料夾，把網站還沒有的課程用 `tools/import-lesson.py` 轉成 `lessons/NNN.html`，推到 `claude/` 開頭的分支。
+3. GitHub Actions（`.github/workflows/pages.yml`）把該分支合併進 `main`，執行 `node build.mjs`，把 `dist/` 發布到 GitHub Pages。
 
 ## 課程檔格式：`lessons/NNN.html`
 
