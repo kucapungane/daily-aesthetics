@@ -1,6 +1,7 @@
 # Builds the site and publishes it to GitHub Pages.
 # The daily routine pushes its new lesson to a claude/… branch; this workflow merges that branch
-# into main first, so main always holds every lesson, then builds and deploys from main.
+# into main, then starts itself again on main (a push made with GITHUB_TOKEN starts no workflow,
+# a workflow_dispatch does), and only a run on main deploys: the Pages environment admits main only.
 name: Build and deploy
 
 on:
@@ -10,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
   pages: write
   id-token: write
 
@@ -33,10 +35,13 @@ jobs:
           git merge --no-edit "origin/${GITHUB_REF_NAME}"
           git push origin main
           git push origin --delete "${GITHUB_REF_NAME}" || true
+      - name: Deploy from main
+        run: gh workflow run pages.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   deploy:
-    needs: merge
-    if: always() && (needs.merge.result == 'success' || needs.merge.result == 'skipped')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
