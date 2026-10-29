@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="甲骨文「美」字印">
+  <!-- 美 in its oracle-bone form (从羊从大: a person, arms out, under a ram-horn headdress), cut in reverse into a seal -->
+  <defs><filter id="stone" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="2.6" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+  <g filter="url(#stone)"><path fill="#34495a" d="M9 11 Q8 7 13 7 L48 8 Q52 6 56 8 L87 7 Q93 7 92 12 L93 46 Q91 51 93 55 L92 88 Q93 93 88 93 L55 92 Q50 94 45 92 L12 93 Q7 93 8 88 L7 54 Q9 50 7 46 Z"/><g fill="none" stroke="#edebe7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M33 30 Q27 17 36 13 Q42 11 42 18"/><path d="M67 30 Q73 17 64 13 Q58 11 58 18"/><path d="M33 31 Q50 36 67 31"/><path d="M50 20 L50 64"/><path d="M23 49 Q36 44 50 47 Q64 44 77 49"/><path d="M50 62 Q43 74 32 87"/><path d="M50 62 Q57 74 68 87"/></g></g>
+</svg>

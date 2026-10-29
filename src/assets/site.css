@@ -1,20 +1,25 @@
 /* 每日美學課程: a tear-off calendar pad. White leaves, black ink, one biro blue, on a black ground.
    Five type steps: small, body, lead, head, and the giant numeral of the leaf. */
 :root {
-  --bg: #ffffff;
-  --surface: #f4f4f4;
-  --ink: #111111;
-  --muted: #5c5c5c;
-  --accent: #1a4be0;
-  --accent-deep: #0f39b8;
-  --accent-ink: #ffffff;
-  --ground: #111111;
-  --ground-ink: #ffffff;
-  --ground-soft: #c9c9c9;
-  --leaf-1: #f4f4f4;
-  --leaf-2: #e6e6e6;
-  --leaf-3: #d4d4d4;
-  --tint: #e3e9fb;
+  /* ink and paper: a bone-coloured laid paper, soot ink, one slate ink-blue taken from the seal and the lesson diagrams */
+  --bg: #edebe7;
+  --surface: #e3e1dc;
+  --ink: #1c1b19;
+  --muted: #5f5a52;
+  --accent: #34495a;
+  --accent-deep: #263744;
+  --accent-ink: #efeeeb;
+  --ground: #1b1a18;
+  --ground-ink: #efeeeb;
+  --ground-soft: #c4bfb5;
+  --leaf-1: #e6e4df;
+  --leaf-2: #dad7d0;
+  --leaf-3: #cdc9c1;
+  --tint: #dde2e1;
+  /* paper fibre and laid lines, drawn as SVG so nothing is a gradient; both stay below 6% so text keeps its contrast */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .27 0 0 0 0 .2 0 0 0 .55 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --laid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='4'%3E%3Crect width='160' height='1' fill='%235a4e3c' fill-opacity='.035'/%3E%3Crect x='80' width='1.2' height='4' fill='%235a4e3c' fill-opacity='.05'/%3E%3C/svg%3E");
+  --grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .9 0 0 0 0 .86 0 0 0 0 .78 0 0 0 .5 -.25'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --display: "Bodoni Moda", "Noto Serif TC", "Songti TC", serif;
   --serif-tc: "Noto Serif TC", "Songti TC", serif;
   --text: "Jost", "Noto Sans TC", "PingFang TC", sans-serif;
@@ -45,7 +50,10 @@ figcaption { font-size: var(--step-small); line-height: 1.6; color: var(--muted)
 /* ---------- the bar ---------- */
 .bar { display: flex; justify-content: center; align-items: center; position: relative; padding: 22px var(--margin); color: var(--ground-ink); font-size: var(--step-small); }
 .bar a { color: inherit; text-decoration: none; }
-.wordmark { font-family: var(--serif-tc); font-weight: 600; letter-spacing: 0.08em; }
+.wordmark { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif-tc); font-weight: 600; letter-spacing: 0.08em; }
+.wordmark img { width: 30px; height: 30px; }
+.wordmark span span { display: block; font-family: var(--serif-tc); font-weight: 500; font-size: 0.8125rem; letter-spacing: 0.04em; color: var(--ground-soft); line-height: 1.1; }
+.wordmark > span { line-height: 1.2; }
 .bar nav { position: absolute; right: var(--margin); }
 .bar nav a:hover, .bar nav a[aria-current] { text-decoration: underline; }
 
@@ -122,7 +130,7 @@ a.pad-leaf:hover .pad-tab { text-decoration: underline; }
 /* source stamps, in running text and on the slips */
 mark.src { background: var(--surface); color: var(--ink); font-weight: 500; padding: 0.1em 0.45em; margin-right: 0.45em; white-space: nowrap; }
 mark.src-2, mark.src-6 { background: var(--tint); }
-mark.src-4, mark.src-5 { background: var(--ink); color: var(--bg); }
+mark.src-4, mark.src-5 { background: #3a3733; color: var(--bg); }
 .slip mark.src, mark.src-inline { margin: 0; }
 mark.src-inline { padding: 0.05em 0.3em; }
 
@@ -186,7 +194,7 @@ mark.src-inline { padding: 0.05em 0.3em; }
 .leaf-facts dt { color: var(--muted); }
 .leaf-facts dd { margin: 0; font-weight: 500; }
 .leaf-go { margin-top: 32px; }
-.leaf-perforation { grid-column: 1 / -1; height: 40px; margin: clamp(40px, 5vw, 64px) calc(-1 * clamp(24px, 5vw, 72px)) 0; background-color: var(--surface); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Ccircle cx='7' cy='0' r='3.5' fill='%23111111'/%3E%3C/svg%3E"); background-repeat: repeat-x; }
+.leaf-perforation { grid-column: 1 / -1; height: 40px; margin: clamp(40px, 5vw, 64px) calc(-1 * clamp(24px, 5vw, 72px)) 0; background-color: var(--surface); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Ccircle cx='7' cy='0' r='3.5' fill='%231b1a18'/%3E%3C/svg%3E"), var(--grain); background-repeat: repeat-x, repeat; }
 .lesson-body { max-width: 720px; margin: 0 auto; padding: clamp(48px, 6vw, 96px) clamp(20px, 4vw, 40px) clamp(64px, 8vw, 120px); }
 .part { margin-bottom: clamp(72px, 8vw, 112px); }
 .part h2 { font-size: clamp(2rem, 1.5rem + 1.6vw, 2.75rem); margin-bottom: 28px; }
@@ -225,7 +233,7 @@ th { font-weight: 500; background: var(--surface); }
 .pager a:hover { background: var(--leaf-2); color: var(--ink); }
 .pager span { display: block; font-family: var(--text); font-size: var(--step-small); color: var(--muted); }
 .pager-next { text-align: right; }
-.pager .pager-soon { background: #222; color: var(--ground-ink); }
+.pager .pager-soon { background: #2a2825; color: var(--ground-ink); }
 .pager .pager-soon span { color: var(--ground-soft); }
 
 /* ---------- archive: index with preview ---------- */
@@ -331,3 +339,9 @@ th { font-weight: 500; background: var(--surface); }
   .index-frame { display: none; }
   .index-inline { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: contain; background: var(--surface); margin-bottom: 12px; }
 }
+
+/* ---------- texture: paper everywhere there is paper, a faint manuscript behind the dark first screen ---------- */
+.pad-leaf, .pad-tab, .today-leaf, .daily, .all, .domains, .card, .lesson, .index, .slip, .deck-card, .pager a, .step, .domains-photo figcaption { background-image: var(--grain), var(--laid); }
+body, .today, .back, .deck-next, .domains-tile, .pager .pager-soon { background-image: var(--grain-dark); }
+.hero { position: relative; isolation: isolate; }
+.hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("img/montaigne.jpg") 50% 22% / cover no-repeat; filter: grayscale(1) contrast(1.1); opacity: 0.06; mix-blend-mode: screen; }

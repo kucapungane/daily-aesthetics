@@ -157,7 +157,7 @@ function head({ title, description, depth, image, url }) {
 <meta property="og:url" content="${esc(url)}">
 ${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
 <link rel="alternate" type="application/rss+xml" title="${NAME}" href="${up}feed.xml">
-<link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="${up}assets/logo/seal.svg" type="image/svg+xml">
 ${FONTS}
 <link rel="stylesheet" href="${up}assets/site.css">
 <script>document.documentElement.classList.add('js')</script>
@@ -166,7 +166,7 @@ ${FONTS}
 
 function bar(depth, current) {
   const up = '../'.repeat(depth);
-  return `<header class="bar"><a class="wordmark" href="${up || './'}">${NAME}</a><nav aria-label="主要"><a href="${up}lessons/"${current === 'archive' ? ' aria-current="page"' : ''}>全部課程</a></nav></header>`;
+  return `<header class="bar"><a class="wordmark" href="${up || './'}"><img src="${up}assets/logo/seal.svg" alt="" width="30" height="30"><span>${NAME}<span lang="grc">αἴσθησις</span></span></a><nav aria-label="主要"><a href="${up}lessons/"${current === 'archive' ? ' aria-current="page"' : ''}>全部課程</a></nav></header>`;
 }
 
 function credits(depth) {
@@ -198,7 +198,7 @@ function footer(depth, { withCredits = false } = {}) {
 </ul>
 </div>
 </div>
-<p class="imprint">${NAME} · 文字由 Claude 依課綱撰寫並逐條查證來源${withCredits ? `<br>本頁圖片：${credits(depth)}，皆為公有領域，經 Wikimedia Commons 取得。` : '<br>郵票圖：Henri de Toulouse-Lautrec，1893 年，公有領域。'}</p>
+<p class="imprint">${NAME} · 文字由 Claude 依課綱撰寫並逐條查證來源<br>標誌：甲骨文「美」字（《說文解字》：从羊从大）刻成的印，旁為 Baumgarten 1735 年造 aesthetica 一詞所本的希臘字 αἴσθησις${withCredits ? `<br>本頁圖片：${credits(depth)}，皆為公有領域，經 Wikimedia Commons 取得。` : '<br>郵票圖：Henri de Toulouse-Lautrec，1893 年，公有領域。'}</p>
 </footer>
 <script src="${up}assets/site.js" defer></script>
 </body>
