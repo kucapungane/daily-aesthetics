@@ -34,6 +34,32 @@ const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const longDate = (d) => { const [y, m, day] = d.split('-').map(Number); const w = new Date(Date.UTC(y, m - 1, day)).getUTCDay(); return `${y} 年 ${m} 月 ${day} 日 · 星期${WEEK[w]}`; };
 const dotDate = (d) => d.replace(/-/g, '.');
 
+// ---------- sanitize ----------
+// The site is public, so a lesson file may only carry text markup: an allowlist of tags, of attributes
+// (href and src, plus an image's size), and of link and picture schemes. Everything else is dropped, and
+// the elements that can run or embed something are dropped with their contents.
+const ALLOWED_TAGS = new Set(['h2', 'h3', 'p', 'br', 'ol', 'ul', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'img', 'em', 'strong', 'b', 'i', 'sup', 'sub', 'blockquote', 'span']);
+const DROP_WITH_CONTENT = /<(script|style|iframe|frame|frameset|object|embed|applet|form|svg|math|template|noscript|textarea|select|button|video|audio|canvas|head|title)\b[\s\S]*?<\/\1\s*>/gi;
+const safeHref = (u) => /^(https?:|mailto:|#|\.{0,2}\/|[^:]*$)/i.test(u.trim());
+const safeSrc = (u) => /^(https:|http:|data:image\/(png|jpe?g|gif|webp);base64,|img\/|\.{0,2}\/)/i.test(u.trim()) || /^[\w./-]+$/.test(u.trim());
+function sanitize(html) {
+  html = html.replace(/<!--[\s\S]*?-->/g, '').replace(DROP_WITH_CONTENT, '');
+  return html.replace(/<\/?([a-zA-Z][\w-]*)\b([^>]*)>/g, (tag, name, attrs) => {
+    name = name.toLowerCase();
+    if (!ALLOWED_TAGS.has(name)) return '';
+    if (tag.startsWith('</')) return `</${name}>`;
+    const get = (a) => attrs.match(new RegExp(`\\b${a}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'))?.slice(2).find((v) => v !== undefined);
+    let out = '';
+    if (name === 'a') { const h = get('href'); if (h !== undefined && safeHref(h.replace(/&amp;/g, '&'))) out += ` href="${h.replace(/"/g, '&quot;')}"`; }
+    if (name === 'img') {
+      const s = get('src'); if (s === undefined || !safeSrc(s.replace(/&amp;/g, '&'))) return '';
+      out += ` src="${s.replace(/"/g, '&quot;')}"`;
+      for (const a of ['width', 'height']) { const v = get(a); if (v && /^\d{1,4}$/.test(v)) out += ` ${a}="${v}"`; }
+    }
+    return `<${name}${out}>`;
+  });
+}
+
 // ---------- read lessons ----------
 function parseLesson(file) {
   const raw = readFileSync(join(ROOT, 'lessons', file), 'utf8');
@@ -45,14 +71,12 @@ function parseLesson(file) {
   // body only: drop the header and anything a full document wraps around it
   let body = raw.replace(m[0], '');
   const b = body.match(/<body[^>]*>([\s\S]*)<\/body>/i); if (b) body = b[1];
-  body = body.replace(/<(head|style|script|title|meta)[^>]*>[\s\S]*?<\/\1>|<meta[^>]*>/gi, '');
-  body = body.replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/href="\s*javascript:[^"]*"/gi, 'href="#"');
+  body = sanitize(body);
   const parts = body.split(/<h2[^>]*>/i).slice(1).map((p) => { const [h, ...rest] = p.split(/<\/h2>/i); return { heading: strip(h), html: rest.join('</h2>') }; });
   if (!parts.length) throw new Error(`${file}: no <h2> sections`);
   const sec = (re) => parts.find((p) => re.test(p.heading));
   const lead = strip(sec(/今日重點/)?.html || parts[0].html);
-  const firstImg = body.match(/<img[^>]*src="([^"]+)"/i)?.[1] || null;
-  return { file, ...meta, number, id: num3(number), parts, lead, firstImg };
+  return { file, ...meta, number, id: num3(number), parts, lead };
 }
 
 // ---------- lesson body: figures, stamps, practice timer ----------
@@ -149,6 +173,8 @@ function head({ title, description, depth, image, url }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Du+OJKJSbdUgz5nrHeWWINvez6XKDDU/tyj/5c2uvwo='; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta property="og:title" content="${esc(title)}">
@@ -305,7 +331,7 @@ ${tabs.slice(1).reverse().map(([id, label], i, arr) => `<a class="pad-leaf pad-l
 <p class="today-lead" data-reveal>${esc(t.lead)}</p>
 <p data-reveal><a href="lessons/${t.id}/">讀完整一堂，約 15 分鐘</a></p>
 </div>
-${t.firstImg ? `<figure class="today-fig" data-reveal><img src="${esc(imgSrc(lessonImageFor(t), depth))}" alt="${esc(firstCaption(t))}"><figcaption>${esc(firstCaption(t))}</figcaption></figure>` : ''}
+${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img src="${esc(imgSrc(lessonImageFor(t), depth))}" alt="${esc(firstCaption(t))}"><figcaption>${esc(firstCaption(t))}</figcaption></figure>` : ''}
 </div>
 </div>
 </section>
@@ -420,10 +446,17 @@ const files = readdirSync(join(ROOT, 'lessons')).filter((f) => /^\d{3,}\.html$/.
 const lessons = files.map(parseLesson).sort((a, b) => b.number - a.number);
 const seen = new Set();
 for (const l of lessons) { if (seen.has(l.number)) throw new Error(`lesson ${l.id} appears twice`); seen.add(l.number); }
-// the home page shows a photograph rather than a diagram when the lesson has one (a .jpg, or a remote picture that is not a chart)
+// Outside its own lesson page a picture appears without its full credit line (home page, deck, archive,
+// link previews), so only pictures that need no credit go there: public domain or CC0, or the course's
+// own diagrams ("本課程依…繪製"). A CC BY or CC BY-SA picture stays on its lesson page, with its credit.
+// The home page prefers a photograph to a diagram.
+const CREDIT_FREE = /public\s*domain|公有領域|\bCC0\b|本課程依/i;
 for (const l of lessons) {
-  const srcs = [...l.parts.map((p) => p.html).join('').matchAll(/<img[^>]*src="([^"]+)"/g)].map((m) => m[1]);
-  l.firstPhoto = srcs.find((s) => /\.(jpe?g)(\?|$)/i.test(s) && !/quickchart/.test(s)) || null;
+  const all = l.parts.map((p) => p.html).join('');
+  const pics = [...all.matchAll(/<img[^>]*src="([^"]+)"[^>]*>\s*<\/p>\s*<p>\s*(?:<em>)?\s*(圖\s*\d+[｜|][\s\S]*?)<\/p>/g)].map((m) => ({ src: m[1], caption: m[2] }));
+  const free = pics.filter((p) => CREDIT_FREE.test(strip(p.caption)));
+  l.firstImg = free[0]?.src || null;
+  l.firstPhoto = free.find((p) => /\.(jpe?g)(\?|$)/i.test(p.src) && !/quickchart/.test(p.src))?.src || null;
 }
 
 rmSync(OUT, { recursive: true, force: true });
