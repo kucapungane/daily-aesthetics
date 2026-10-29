@@ -166,7 +166,14 @@ function lessonBody(l, depth) {
 const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Jost:wght@400;500&family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@500;600&display=swap" rel="stylesheet">`;
 
-function head({ title, description, depth, image, url }) {
+// structured data for search engines; "<" is escaped so the JSON can never close its script element
+const jsonLd = (o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`;
+const PUBLISHER = { '@type': 'Organization', name: NAME, url: `${SITE_URL}/`, logo: `${SITE_URL}/assets/logo/seal.svg` };
+// Google Search Console: put the verification code here (the content of its meta tag), or drop its
+// googleXXXX.html file into src/root/, which is copied to the top of the site
+const GOOGLE_SITE_VERIFICATION = '';
+
+function head({ title, description, depth, image, url, type = 'website', ld }) {
   const up = '../'.repeat(depth);
   return `<!doctype html>
 <html lang="zh-Hant-TW">
@@ -179,9 +186,14 @@ function head({ title, description, depth, image, url }) {
 <meta name="description" content="${esc(description)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-<meta property="og:type" content="website">
+<link rel="canonical" href="${esc(url)}">
+<meta property="og:site_name" content="${NAME}">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:type" content="${type}">
 <meta property="og:url" content="${esc(url)}">
-${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
+${image ? `<meta property="og:image" content="${esc(image)}">\n<meta name="twitter:card" content="summary_large_image">` : '<meta name="twitter:card" content="summary">'}
+${GOOGLE_SITE_VERIFICATION ? `<meta name="google-site-verification" content="${esc(GOOGLE_SITE_VERIFICATION)}">` : ''}
+${ld ? jsonLd(ld) : ''}
 <link rel="alternate" type="application/rss+xml" title="${NAME}" href="${up}feed.xml">
 <link rel="icon" href="${up}assets/logo/seal.svg" type="image/svg+xml">
 ${FONTS}
@@ -235,8 +247,14 @@ function footer(depth, { withCredits = false } = {}) {
 function lessonPage(l, prev, next) {
   const depth = 2;
   const url = `${SITE_URL}/lessons/${l.id}/`;
-  const ogImg = l.firstImg ? (/^https?:/.test(l.firstImg) ? l.firstImg : `${SITE_URL}/lessons/${l.firstImg}`) : null;
-  return `${head({ title: `第${l.id}堂｜${l.title}｜${NAME}`, description: l.lead.slice(0, 120), depth, image: ogImg, url })}
+  const pic = lessonImageFor(l);
+  const ogImg = pic ? (/^https?:/.test(pic) ? pic : `${SITE_URL}/lessons/${pic}`) : null;
+  return `${head({ title: `第${l.id}堂｜${l.title}｜${NAME}`, description: l.lead.slice(0, 120), depth, image: ogImg, url, type: 'article', ld: {
+    '@context': 'https://schema.org', '@type': 'Article', headline: `第${l.id}堂｜${l.title}`, description: l.lead.slice(0, 200), inLanguage: 'zh-Hant-TW',
+    datePublished: `${l.date}T${PUBLISH_TIME}:00+08:00`, url, mainEntityOfPage: url, ...(ogImg ? { image: ogImg } : {}),
+    author: PUBLISHER, publisher: PUBLISHER, isPartOf: { '@type': 'WebSite', name: NAME, url: `${SITE_URL}/` },
+    about: [l.domain, l.contrast].filter(Boolean),
+  } })}
 <body class="page-lesson">
 ${bar(depth)}
 <main>
@@ -267,7 +285,10 @@ ${footer(depth)}`;
 
 function archivePage(lessons) {
   const depth = 1;
-  return `${head({ title: `全部課程｜${NAME}`, description: `${NAME}的全部 ${lessons.length} 堂課，從最新的一堂開始。`, depth, url: `${SITE_URL}/lessons/` })}
+  return `${head({ title: `全部課程｜${NAME}`, description: `${NAME}的全部 ${lessons.length} 堂課，從最新的一堂開始。`, depth, url: `${SITE_URL}/lessons/`, ld: {
+    '@context': 'https://schema.org', '@type': 'ItemList', name: `${NAME}：全部課程`,
+    itemListElement: lessons.map((l, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/lessons/${l.id}/`, name: `第${l.id}堂｜${l.title}` })),
+  } })}
 <body class="page-archive">
 ${bar(depth, 'archive')}
 <main class="archive">
@@ -307,7 +328,10 @@ function homePage(lessons) {
     ['傳說', '軼事與流傳的故事', ['照樣可以講', '但會標出是傳說', '不當成史實']],
     ['已被反駁', '曾經流行、後來被推翻', ['寫出反駁的來源', '讓你知道為什麼', '不再這樣說']],
   ];
-  return `${head({ title: `${NAME}｜每天早上一堂美學課`, description: `每天早上 ${PUBLISH_TIME}，一堂查證過來源的美學課，加二十分鐘只用手機和紙筆的日常練習。`, depth, image: `${SITE_URL}/assets/img/montaigne.jpg`, url: `${SITE_URL}/` })}
+  return `${head({ title: `${NAME}｜每天早上一堂美學課`, description: `每天早上 ${PUBLISH_TIME}，一堂查證過來源的美學課，加二十分鐘只用手機和紙筆的日常練習。`, depth, image: `${SITE_URL}/assets/img/montaigne.jpg`, url: `${SITE_URL}/`, ld: {
+    '@context': 'https://schema.org', '@type': 'WebSite', name: NAME, url: `${SITE_URL}/`, inLanguage: 'zh-Hant-TW', publisher: PUBLISHER,
+    description: `每天早上 ${PUBLISH_TIME}，一堂查證過來源的美學課，加二十分鐘只用手機和紙筆的日常練習。`,
+  } })}
 <body class="page-home">
 <div class="hero">
 ${bar(depth)}
@@ -470,5 +494,11 @@ lessons.forEach((l, i) => {
   writeFileSync(join(OUT, 'lessons', l.id, 'index.html'), lessonPage(l, lessons[i + 1], lessons[i - 1]));
 });
 writeFileSync(join(OUT, 'feed.xml'), feed(lessons));
+// the sitemap for search engines: the home page, the archive, and every lesson with the day it came out
+const newest = lessons[0].date;
+const urls = [[`${SITE_URL}/`, newest, 'daily'], [`${SITE_URL}/lessons/`, newest, 'daily'], ...lessons.map((l) => [`${SITE_URL}/lessons/${l.id}/`, l.date, 'monthly'])];
+writeFileSync(join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="utf-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d, f]) => `<url><loc>${esc(u)}</loc><lastmod>${d}</lastmod><changefreq>${f}</changefreq></url>`).join('\n')}\n</urlset>\n`);
+// files that must sit at the top of the site (a Search Console verification file, for one)
+if (existsSync(join(ROOT, 'src', 'root'))) cpSync(join(ROOT, 'src', 'root'), OUT, { recursive: true });
 writeFileSync(join(OUT, '.nojekyll'), '');
 console.log(`built ${lessons.length} lesson(s) into dist/ (latest: 第${lessons[0].id}堂 ${lessons[0].title})`);

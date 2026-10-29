@@ -28,6 +28,10 @@ doc: https://docs.google.com/document/d/…/edit
 - 今日練習的三步各用一段 `<p><strong>看（5 分鐘）</strong></p>`，網站會變成計時器。
 - 圖片用 `<p><img src="…" width="…"></p>` 加下一段 `<p><em>圖 N｜…</em></p>`；圖片網址可以是 Wikimedia、quickchart，或放在 `lessons/img/` 的檔案。
 
+## 搜尋引擎
+
+每次建置都會產生 `sitemap.xml`（首頁、全部課程、每一堂）。Google Search Console 的驗證：把驗證碼填進 `build.mjs` 的 `GOOGLE_SITE_VERIFICATION`，或把 `googleXXXX.html` 驗證檔放進 `src/root/`。
+
 ## 在本機預覽
 
 ```bash
