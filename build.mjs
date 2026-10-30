@@ -281,7 +281,7 @@ function footer(depth, { withCredits = false } = {}) {
 <div class="card" data-reveal>
 <div class="card-message">
 <h2>明早見</h2>
-<p>每天早上 ${PUBLISH_TIME}，新的一堂會出現在這裡。用 RSS 閱讀器訂閱，就不會錯過任何一堂。</p>
+<p>每天早上 ${PUBLISH_TIME}，新的一堂會出現在這裡。用 RSS 閱讀器訂閱，新的一堂會自動送到。</p>
 <p>每堂課的圖片都是公有領域或開放授權，出處寫在圖說和文末的來源表。</p>
 </div>
 <div class="card-address">
@@ -352,7 +352,7 @@ ${bar(depth, 'archive')}
 <header class="archive-head">
 <div class="archive-words" data-reveal>
 <h1>全部課程</h1>
-<p>${lessons.length} 堂，每天早上 ${PUBLISH_TIME} 多一堂。指向任何一堂，可以先看它的第一張圖。</p>
+<p>${lessons.length} 堂，每天早上 ${PUBLISH_TIME} 多一堂。游標移到任何一堂上，會先顯示它的第一張圖。</p>
 <a class="button" href="${lessons[0].id}/">讀最新一堂：第${lessons[0].id}堂</a>
 </div>
 <figure class="archive-photo" data-reveal><img src="../assets/img/montaigne.webp" srcset="../assets/img/montaigne-480.webp 480w, ../assets/img/montaigne.webp 1097w" sizes="(max-width: 760px) 100vw, 40vw" width="1097" height="1600" decoding="async" alt="Montaigne 在印好日期的曆書頁上手寫的記事，1568 年 6 月 18 日"><figcaption>一天一頁：Montaigne 在曆書 6 月 18 日那頁寫下的記事，1568 年。</figcaption></figure>
@@ -382,8 +382,8 @@ function homePage(lessons) {
     ['實證研究', '有方法、有數據的研究', ['寫出研究者、年份與期刊', '數據圖只畫有出處的數字', '示意圖會寫明不是實測']],
     ['史料', '有文獻記載的事', ['Lange 1936 年 3 月', '在加州 Nipomo 拍下', '《Migrant Mother》', '（美國國會圖書館）']],
     ['依二手文獻', '查不到原文時', ['寫明轉引自哪一本書', 'Leibniz 的音樂名言', '依 MacTutor 引文頁，', '轉引自 Oliver Sacks']],
-    ['傳說', '軼事與流傳的故事', ['照樣可以講', '但會標出是傳說', '不當成史實']],
-    ['已被反駁', '曾經流行、後來被推翻', ['寫出反駁的來源', '讓你知道為什麼', '不再這樣說']],
+    ['傳說', '軼事與流傳的故事', ['宙克西斯畫葡萄騙過鳥，', '普林尼自己也寫', '「據說」（第002堂）']],
+    ['已被反駁', '曾經流行、後來被推翻', ['《火車進站》嚇跑觀眾，', '依 Loiperdinger 2004', '找不到當時的報導', '（第002堂）']],
   ];
   return `${head({ title: `${NAME}｜每天早上一堂美學課`, description: `每天早上 ${PUBLISH_TIME}，一堂查證過來源的美學課，加二十分鐘只用手機和紙筆的日常練習。`, depth, image: `${SITE_URL}/assets/img/montaigne.jpg`, url: `${SITE_URL}/`, ld: {
     '@context': 'https://schema.org', '@type': 'WebSite', name: NAME, url: `${SITE_URL}/`, inLanguage: 'zh-Hant-TW', publisher: PUBLISHER,
@@ -420,7 +420,7 @@ ${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img${picAttrs(less
 <section class="daily" id="daily" aria-labelledby="daily-title">
 <div class="daily-top">
 <h2 id="daily-title" data-reveal>每天一堂</h2>
-<p data-reveal>每一堂都是同一套八段格式，所以你永遠知道讀到哪裡、還剩多少。讀完就能直接做練習。</p>
+<p data-reveal>每一堂都是同樣的八段，讀到哪裡、還剩多少，一看就知道。讀完直接做練習。</p>
 </div>
 <dl class="facts">
 <div data-reveal><dt>${PUBLISH_TIME}</dt><dd>每天早上出刊，台灣時間</dd></div>
@@ -440,7 +440,7 @@ ${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img${picAttrs(less
 </ol>
 <figure class="daily-photo" data-reveal>
 <img src="assets/img/montaigne-binding.webp" srcset="assets/img/montaigne-binding-480.webp 480w, assets/img/montaigne-binding.webp 774w" sizes="(max-width: 760px) 100vw, 40vw" width="774" height="1100" decoding="async" alt="一本封皮磨破、書頁捲曲的十六世紀曆書" loading="lazy">
-<figcaption>一天一頁的書被翻成這樣：Montaigne 家用了幾十年的《Ephemeris historica》。</figcaption>
+<figcaption>Montaigne 家那本一天一頁的《Ephemeris historica》，封皮已經磨破。</figcaption>
 </figure>
 </section>
 
@@ -448,7 +448,7 @@ ${lessonImageFor(t) ? `<figure class="today-fig" data-reveal><img${picAttrs(less
 <img class="sources-photo" src="assets/img/montaigne.webp" srcset="assets/img/montaigne-480.webp 480w, assets/img/montaigne.webp 1097w" sizes="100vw" width="1097" height="1600" decoding="async" alt="Montaigne 在印好日期的《Ephemeris historica》6 月 18 日頁上，手寫記下父親在 1568 年過世" loading="lazy">
 <div class="sources-text">
 <h2 id="sources-title">每段都標出處</h2>
-<p>課程裡的每一段，都先說它是哪一種知識。理論是某人的主張，研究要有數據，史料要有文獻。</p>
+<p>每一段開頭都先標明它是哪一種知識：理論是某人的主張，研究要有數據，史料要有文獻。</p>
 <p>查不到原文的，寫明轉引自哪本書；查不到的，就不寫。</p>
 </div>
 <ul class="slips" aria-label="六種來源標示">
@@ -484,7 +484,7 @@ ${l.firstImg ? `<img class="deck-img"${picAttrs(l.firstImg, depth, '360px')} alt
 <div class="domains-tiles">
 <figure class="domains-photo" data-reveal>
 <video muted loop playsinline preload="none" poster="assets/video/danse-serpentine-poster.webp" width="640" height="480" aria-hidden="true" data-film data-src="assets/video/danse-serpentine.webm"></video>
-<figcaption>舞蹈與電影：Lumière 兄弟 1897 年拍下的〈Danse serpentine〉，一位舞者用長棒撐開綢布，讓布料本身成為動作。</figcaption>
+<figcaption>舞蹈與電影：Lumière 兄弟 1897 年拍下的〈Danse serpentine〉，一位舞者用長棒撐開綢布旋轉。</figcaption>
 </figure>
 <div class="domains-tile" data-reveal>
 <svg viewBox="0 0 300 300" role="img" aria-label="七個領域，今天的主例是${esc(t.domain || '')}">
