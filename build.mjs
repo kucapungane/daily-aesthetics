@@ -121,7 +121,16 @@ function parseLesson(file) {
 // ---------- lesson body: figures, stamps, practice timer ----------
 const imgSrc = (src, depth) => { src = src.replace(/&amp;/g, '&'); return /^https?:/.test(src) ? src : `${'../'.repeat(depth)}lessons/${src.replace(/^\.?\//, '')}`; };
 
+// a label in brackets, anywhere: 【經典理論】, 【傳說，見於史料】, 【史料；恐慌故事：已被反駁】
+const TYPE_ORDER = ['已被反駁', '傳說', '依二手文獻', '實證研究', '史料研究', '史料', '經典理論'];
+const markFor = (text) => { const t = TYPE_ORDER.find((x) => text.includes(x)) || '經典理論'; return `<mark class="src src-${SOURCE_TYPES.indexOf(t)}">${text}</mark>`; };
+function bracketStamps(html) {
+  // a short paragraph that is only a name and its label reads as a small heading
+  html = html.replace(/<p>\s*(?:<strong>)?([^<【]{2,40}?)(?:<\/strong>)?\s*【([^】]{2,30})】\s*<\/p>/g, (all, title, label) => `<h3 class="claim-head">${title.trim()} ${markFor(label)}</h3>`);
+  return html.replace(/【([^】]{2,30})】/g, (all, label) => (TYPE_ORDER.some((t) => label.includes(t)) ? markFor(label) : all));
+}
 function stamps(html) {
+  html = bracketStamps(html);
   // "史料｜一篇談詩的學位論文。 Rest" -> a stamp, the lead sentence in bold, then the rest
   html = html.replace(/<p>\s*((?:<(?:strong|em)>)*)\s*(經典理論|實證研究|史料|傳說|已被反駁|依二手文獻)(，依二手文獻)?([｜|。])\s*/g, (all, open, type, second, sep) => {
     const marks = `<mark class="src src-${SOURCE_TYPES.indexOf(type)}"${sep === '。' ? '' : ` data-open="${(open.match(/<(strong|em)>/g) || []).length}"`}>${type}</mark>${second ? `<mark class="src src-3">依二手文獻</mark>` : ''}`;
@@ -161,16 +170,20 @@ function tables(html) {
   });
 }
 
-const MINUTES = /^(看|做|回顧)\s*[（(]\s*(\d+)\s*分鐘\s*[)）]\s*$/;
+// the three steps start with a paragraph "看（5 分鐘）", alone or followed on the same line by "：text"
+const STEP_START = /<p>\s*(?:<(?:strong|em)>)?\s*(看|做|回顧)\s*[（(]\s*(\d+)\s*分鐘\s*[)）]/;
 function practice(html) {
-  // the three steps: a paragraph "看（5 分鐘）" followed by its text, until the next step
-  const blocks = html.split(/(?=<p>\s*(?:<strong>)?\s*(?:看|做|回顧)\s*[（(]\s*\d+\s*分鐘\s*[)）]\s*(?:<\/strong>)?\s*<\/p>)/);
+  const blocks = html.split(/(?=<p>\s*(?:<(?:strong|em)>)?\s*(?:看|做|回顧)\s*[（(]\s*\d+\s*分鐘\s*[)）])/);
   const intro = blocks.shift();
   if (!blocks.length) return html;
   const steps = blocks.map((b) => {
-    const m = b.match(/^<p>\s*(?:<strong>)?\s*([^<]+?)\s*(?:<\/strong>)?\s*<\/p>([\s\S]*)$/);
-    const [, name, min] = m[1].match(MINUTES);
-    return { name, min: Number(min), rest: m[2] };
+    const [, name, min] = b.match(STEP_START);
+    // whatever follows the heading on its own line becomes the first paragraph of the step
+    const head = b.match(/^<p>([\s\S]*?)<\/p>/);
+    const after = strip(head[1]).replace(/^(看|做|回顧)\s*[（(]\s*\d+\s*分鐘\s*[)）]\s*[：:，,、。]?\s*/, '');
+    const restHtml = head[1].replace(/^\s*(?:<(?:strong|em)>)?\s*(看|做|回顧)\s*[（(]\s*\d+\s*分鐘\s*[)）]\s*(?:<\/(?:strong|em)>)?\s*[：:，,、。]?\s*/, '');
+    const first = after ? `<p>${restHtml}</p>` : '';
+    return { name, min: Number(min), rest: first + b.slice(head[0].length) };
   });
   const total = steps.reduce((a, s) => a + s.min, 0);
   return `${intro}<div class="practice" data-practice data-reveal>
